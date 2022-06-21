@@ -6,13 +6,15 @@ are commonly exploited vulnerabilities present in
 the enterprise network.
 """
 # import statements go here
+import csv
+import requests
 
 
 def main():
     nessus_csv = import_csv()
-    cisa_json = get_cisa_json()
+    vulns_list = get_cisa_json()
     nessus_entries = create_nessus_entries(nessus_csv)
-    cisa_entries = create_cisa_entries(cisa_json)
+    cisa_entries = create_cisa_entries(vulns_list)
     joined_entries = join_nessus_and_cisa(nessus_entries, cisa_entries)
     print_table_to_file(joined_entries)
 
@@ -27,9 +29,13 @@ def import_csv():
 
     Format: [[<field1>, <field2>, ...], ...]
     """
-    # TODO: Finish this function
-    raise NotImplementedError
-    return csv
+    csv_entries = []
+    with open('nessus_csv.csv', newline='') as csvfile:
+        csvreader = csv.reader(csvfile)
+        for row in csvreader:
+            csv_entries.append(row)
+    
+    return csv_entries
 
 
 def get_cisa_json():
@@ -39,11 +45,26 @@ def get_cisa_json():
 
     Downloads a json object from the website. The vulnerabilities is 
     stored in the JSON as a JSON array. Parses the vulnerabilities out
-    and returns the JSON array.
+    and returns a list of vulnerability dictionaries with format:
+
+    {
+        "cveID":  "CVE-2021-27102",
+        "vendorProject":  "Accellion",
+        "product":  "FTA",
+        "vulnerabilityName":  "Accellion FTA OS Command Injection Vulnerability",
+        "dateAdded":  "2021-11-03",
+        "shortDescription":  "Accellion FTA 9_12_411 and earlier is affected by OS command execution via a local web service call.",
+        "requiredAction":  "Apply updates per vendor instructions.",
+        "dueDate":  "2021-11-17",
+        "notes":  ""
+    }
     """
-    # TODO: Finish this function
-    raise NotImplementedError
-    return cisa_json
+    URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    cisa_data = requests.get(URL)
+    response_dict = cisa_data.json()
+    vulns = response_dict.get('vulnerabilities')  # list of vulnerability dictionaries
+
+    return vulns
 
 
 def create_nessus_entries(csv_lines):
@@ -74,10 +95,10 @@ def create_nessus_entries(csv_lines):
     return nessus_entries
 
 
-def create_cisa_entries(cisa_json):
+def create_cisa_entries(vulns_list):
     """
-    cisa_json: the complete json array containing all vulnerabilities
-    as downloaded from CISA
+    vulns_list: a list of vulnerability dictionaries.
+    See get_cisa_json for format of input
 
     Returns a dictionary of nessus results. Format:
     {
