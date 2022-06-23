@@ -279,13 +279,19 @@ def print_tables(joined_entries):
         full_list.extend(sorted_list)
 
     count = 0
-    print("\n-------------------------\n")
-    for entry in full_list:
-        count += 1
-        print("{} - {} - {} hosts affected - {}".format(entry['criticality'], entry['id'], entry['hosts'], entry['name']))
-        if count == 10:
-            break
+    with open("results.txt", 'w') as results_file:
+        lines = []
+        lines.append("".center(101, "-") + "\n")
+        lines.append("|" + "Criticality".center(15, ' ') + "|" + "CVE ID".center(16, ' ') + "|" + "Hosts Affected".center(16, ' ') + "|" + "Vulnerability Name".center(49, " ") + "|\n")
+        lines.append("".center(101, "-") + "\n")
+        for entry in full_list:
+            count += 1
+            name = entry['name'][:44] + "..." if len(entry['name']) > 44 else entry['name']
+            lines.append("|" + entry['criticality'].center(15, ' ') + "|" + entry['id'].center(16, ' ') + "|" + str(entry['hosts']).center(16, ' ') + "| " + name.ljust(48, " ") + "|\n")
+            if count == 10:
+                break
 
+        results_file.writelines(lines)
 
 if __name__ == "__main__":
     main()
